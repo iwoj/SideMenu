@@ -92,7 +92,11 @@ internal extension UIGestureRecognizer {
 internal extension UIPanGestureRecognizer {
 
     var canSwitch: Bool {
+        #if os(xrOS)
+        return true
+        #else
         return !(self is UIScreenEdgePanGestureRecognizer)
+        #endif
     }
 
     var xTranslation: CGFloat {

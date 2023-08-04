@@ -11,7 +11,9 @@ import UIKit
 public class SideMenuManager: NSObject {
 
     final private class SideMenuPanGestureRecognizer: UIPanGestureRecognizer {}
+    #if !os(xrOS)
     final private class SideMenuScreenEdgeGestureRecognizer: UIScreenEdgePanGestureRecognizer {}
+    #endif
 
     @objc public enum PresentDirection: Int { case
         left = 1,
@@ -78,12 +80,14 @@ public class SideMenuManager: NSObject {
 
      - Returns: The array of screen edge gestures added to `toView`.
      */
+    #if !os(xrOS)
     @discardableResult public func addScreenEdgePanGesturesToPresent(toView view: UIView) -> [UIScreenEdgePanGestureRecognizer] {
         return [
             addScreenEdgePanGesturesToPresent(toView: view, forMenu: .left),
             addScreenEdgePanGesturesToPresent(toView: view, forMenu: .right)
         ]
     }
+    #endif
 
     /**
      Adds screen edge gestures to a view to present a menu.
@@ -93,6 +97,7 @@ public class SideMenuManager: NSObject {
  
      - Returns: The screen edge gestures added to `toView`.
      */
+    #if !os(xrOS)
     @discardableResult public func addScreenEdgePanGesturesToPresent(toView view: UIView, forMenu side: PresentDirection) -> UIScreenEdgePanGestureRecognizer {
         if menu(forSide: side) == nil {
             let methodName = #function // "addScreenEdgePanGesturesToPresent"
@@ -101,7 +106,8 @@ public class SideMenuManager: NSObject {
         }
         return self.addScreenEdgeGesture(to: view, edge: side.edge)
     }
-    
+    #endif
+
     /**
      Adds a pan edge gesture to a view to present menus.
      
@@ -138,9 +144,11 @@ internal extension SideMenuManager {
 
 private extension SideMenuManager {
 
+    #if !os(xrOS)
     @objc func handlePresentMenuScreenEdge(_ gesture: UIScreenEdgePanGestureRecognizer) {
         handleMenuPan(gesture)
     }
+    #endif
 
     @objc func handlePresentMenuPan(_ gesture: UIPanGestureRecognizer) {
         handleMenuPan(gesture)
@@ -165,6 +173,7 @@ private extension SideMenuManager {
 
         } else {
             let leftSide: Bool
+            #if !os(xrOS)
             if let gesture = gesture as? UIScreenEdgePanGestureRecognizer {
                 leftSide = gesture.edges.contains(.left)
             } else {
@@ -172,6 +181,11 @@ private extension SideMenuManager {
                 if gesture.xTranslation == 0 { return }
                 leftSide = gesture.xTranslation > 0
             }
+            #else
+            // not sure which way the user is swiping yet, so do nothing
+            if gesture.xTranslation == 0 { return }
+            leftSide = gesture.xTranslation > 0
+            #endif
 
             guard let menu = menu(forLeftSide: leftSide) else { return }
             menu.present(from: topMostViewController, interactively: true)
@@ -197,6 +211,7 @@ private extension SideMenuManager {
         return menu(forSide: leftSide ? .left : .right)
     }
 
+    #if !os(xrOS)
     func addScreenEdgeGesture(to view: UIView, edge: UIRectEdge) -> UIScreenEdgePanGestureRecognizer {
         if let screenEdgeGestureRecognizer = view.gestureRecognizers?.first(where: { $0 is SideMenuScreenEdgeGestureRecognizer }) as? SideMenuScreenEdgeGestureRecognizer,
             screenEdgeGestureRecognizer.edges == edge {
@@ -206,6 +221,7 @@ private extension SideMenuManager {
             $0.edges = edge
         }
     }
+    #endif
 
     @discardableResult func addPresentPanGesture(to view: UIView) -> UIPanGestureRecognizer {
         if let panGestureRecognizer = view.gestureRecognizers?.first(where: { $0 is SideMenuPanGestureRecognizer }) as? SideMenuPanGestureRecognizer {
